@@ -1,0 +1,232 @@
+.welcome-screen {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome-header {
+  background: #1a2e4a;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+
+.welcome-logo {
+  height: 50px;
+  width: auto;
+}
+
+.welcome-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.welcome-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 48px 40px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(26,46,74,0.12);
+  border: 1px solid #e0e4e8;
+  animation: welcome-appear 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes welcome-appear {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.welcome-icon {
+  font-size: 64px;
+  text-align: center;
+  margin-bottom: 24px;
+  animation: icon-bounce 2s ease-in-out infinite;
+}
+
+@keyframes icon-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
+.welcome-title {
+  font-family: 'Barlow', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  color: #1a2e4a;
+  text-align: center;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+
+.welcome-subtitle {
+  font-size: 16px;
+  color: #64748b;
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 36px;
+}
+
+.welcome-features {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 36px;
+  border: 1px solid #e0e4e8;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #1a2e4a;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.feature-item:last-child {
+  margin-bottom: 0;
+}
+
+.feature-icon {
+  width: 24px;
+  height: 24px;
+  background: #2e7d32;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.welcome-form {
+  margin-bottom: 24px;
+}
+
+.form-label {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a2e4a;
+  margin-bottom: 12px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 14px 18px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 16px;
+  border: 2px solid #e0e4e8;
+  border-radius: 10px;
+  transition: all 0.22s ease;
+  margin-bottom: 20px;
+  background: #fafbfc;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #2e7d32;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(46,125,50,0.1);
+}
+
+.form-input::placeholder {
+  color: #94a3b8;
+}
+
+.btn-start {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #2e7d32, #388e3c);
+  border: none;
+  border-radius: 12px;
+  padding: 16px 32px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  box-shadow: 0 4px 16px rgba(46,125,50,0.3);
+  letter-spacing: 0.3px;
+}
+
+.btn-start:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(46,125,50,0.4);
+}
+
+.btn-start:active {
+  transform: translateY(0);
+}
+
+.btn-start:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.welcome-disclaimer {
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+  line-height: 1.6;
+  border-top: 1px solid #e0e4e8;
+  padding-top: 20px;
+}
+
+.welcome-footer {
+  background: #1a2e4a;
+  padding: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+}
+
+@media (max-width: 640px) {
+  .welcome-card {
+    padding: 36px 24px;
+  }
+  
+  .welcome-title {
+    font-size: 26px;
+  }
+  
+  .welcome-subtitle {
+    font-size: 15px;
+  }
+  
+  .welcome-logo {
+    height: 40px;
+  }
+}
+.welcome-icon {
+  text-align: center;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.welcome-icon-img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  animation: icon-bounce 2s ease-in-out infinite;
+}
+
+@keyframes icon-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}

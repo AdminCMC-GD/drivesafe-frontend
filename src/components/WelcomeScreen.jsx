@@ -67,7 +67,7 @@ export default function WelcomeScreen({ onStart }) {
               id="userName"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ej: Juan Pérez López"
+              placeholder="Ej: Alfredo Maldonado"
               className="form-input"
               autoFocus
               minLength={3}
@@ -96,4 +96,5 @@ export default function WelcomeScreen({ onStart }) {
       </footer>
     </div>
   );
+
 }

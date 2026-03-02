@@ -9,10 +9,10 @@ import { QUESTIONS, API_URL } from './constants.js';
 import './styles/main.css';
 
 // Detectar ruta admin: /admin en la URL
-const isAdminRoute = () =>
-  window.location.pathname === '/admin' ||
-  window.location.hash === '#/admin';
-
+const isAdminRoute = () => {
+  const path = window.location.pathname;
+  return path === '/admin' || path.startsWith('/admin/');
+};
 export default function App() {
   // Si la URL es /admin, mostrar directamente el panel
   if (isAdminRoute()) {

@@ -4,29 +4,36 @@ import WelcomeScreen from './components/WelcomeScreen.jsx';
 import SurveyCard from './components/SurveyCard.jsx';
 import ResultsCard from './components/ResultsCard.jsx';
 import LoadingScreen from './components/LoadingScreen.jsx';
+import AdminPanel from './components/AdminPanel.jsx';
 import { QUESTIONS, API_URL } from './constants.js';
 import './styles/main.css';
 
-export default function App() {
-  const [userName, setUserName]         = useState('');
-  const [hasStarted, setHasStarted]     = useState(false);
-  const [currentStep, setCurrentStep]   = useState(0);
-  const [answers, setAnswers]           = useState([]);
-  const [isLoading, setIsLoading]       = useState(false);
-  const [result, setResult]             = useState(null);
-  const [error, setError]               = useState('');
+// Detectar ruta admin: /admin en la URL
+const isAdminRoute = () =>
+  window.location.pathname === '/admin' ||
+  window.location.hash === '#/admin';
 
-  const totalScore = useMemo(
-    () => answers.reduce((sum, a) => sum + a.value, 0),
-    [answers]
-  );
+export default function App() {
+  // Si la URL es /admin, mostrar directamente el panel
+  if (isAdminRoute()) {
+    return <AdminPanel />;
+  }
+
+  return <MainApp />;
+}
+
+function MainApp() {
+  const [userName, setUserName]       = useState('');
+  const [hasStarted, setHasStarted]   = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [answers, setAnswers]         = useState([]);
+  const [isLoading, setIsLoading]     = useState(false);
+  const [result, setResult]           = useState(null);
+  const [error, setError]             = useState('');
 
   const progress = Math.round((answers.length / QUESTIONS.length) * 100);
 
-  const handleStart = (name) => {
-    setUserName(name);
-    setHasStarted(true);
-  };
+  const handleStart = (name) => { setUserName(name); setHasStarted(true); };
 
   const handleAnswer = useCallback((questionId, value) => {
     setAnswers(prev => {
@@ -60,13 +67,8 @@ export default function App() {
   };
 
   const resetSurvey = () => {
-    setUserName('');
-    setHasStarted(false);
-    setAnswers([]);
-    setCurrentStep(0);
-    setResult(null);
-    setError('');
-    setIsLoading(false);
+    setUserName(''); setHasStarted(false); setAnswers([]);
+    setCurrentStep(0); setResult(null); setError(''); setIsLoading(false);
   };
 
   const currentAnswer = answers.find(a => a.questionId === QUESTIONS[currentStep]?.id);
@@ -78,20 +80,18 @@ export default function App() {
     return (
       <>
         <Header showProgress={false} />
-        <ResultsCard 
-          result={result} 
-          answers={answers} 
-          questions={QUESTIONS} 
+        <ResultsCard
+          result={result}
+          answers={answers}
+          questions={QUESTIONS}
           userName={userName}
-          onReset={resetSurvey} 
+          onReset={resetSurvey}
         />
       </>
     );
   }
 
-  if (!hasStarted) {
-    return <WelcomeScreen onStart={handleStart} />;
-  }
+  if (!hasStarted) return <WelcomeScreen onStart={handleStart} />;
 
   return (
     <div className="app-wrapper">

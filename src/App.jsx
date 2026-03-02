@@ -10,8 +10,8 @@ import './styles/main.css';
 
 // Detectar ruta admin: /admin en la URL
 const isAdminRoute = () => {
-  const path = window.location.pathname;
-  return path === '/admin' || path.startsWith('/admin/');
+  const path = window.location.pathname.toLowerCase();
+  return path === '/admin' || path.startsWith('/admin');
 };
 export default function App() {
   // Si la URL es /admin, mostrar directamente el panel

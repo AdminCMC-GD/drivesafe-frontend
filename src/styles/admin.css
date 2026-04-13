@@ -756,3 +756,129 @@
   .answers-table-header,
   .answers-table-row { grid-template-columns: 1fr 90px 50px; }
 }
+
+/* ============================================================
+   AGREGAR AL FINAL DE admin.css
+   Nuevos estilos: tabs, dashboard, EC modal
+   ============================================================ */
+
+/* ─── Tabs de navegación ──────────────────────────────────── */
+.admin-tabs {
+  display: flex; gap: 4px;
+  padding: 0 24px;
+  border-top: 1px solid rgba(255,255,255,.1);
+  background: rgba(0,0,0,.15);
+}
+.admin-tab {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 18px;
+  border: none; background: transparent;
+  color: rgba(255,255,255,.6);
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer; border-bottom: 3px solid transparent;
+  transition: all .2s;
+}
+.admin-tab:hover { color: rgba(255,255,255,.9); }
+.admin-tab--active {
+  color: #fff;
+  border-bottom-color: #4ade80;
+}
+
+/* ─── Tab content wrapper ─────────────────────────────────── */
+.tab-content { display: flex; flex-direction: column; gap: 20px; }
+
+/* ─── Dashboard ───────────────────────────────────────────── */
+.dash-root { display: flex; flex-direction: column; gap: 24px; }
+.dash-hero {
+  background: linear-gradient(135deg, #1e3a5f 0%, #0f4c75 100%);
+  border-radius: 16px; padding: 28px 32px;
+  text-align: center;
+}
+.dash-hero-num {
+  font-size: 56px; font-weight: 800;
+  color: #fff; line-height: 1;
+}
+.dash-hero-label { font-size: 15px; color: rgba(255,255,255,.7); margin-top: 6px; }
+
+.dash-cards {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+}
+.dash-card {
+  background: #fff; border-radius: 16px;
+  padding: 24px; cursor: pointer;
+  border: 2px solid var(--gris-3, #e2e8f0);
+  transition: all .2s;
+  border-top: 4px solid var(--dc);
+}
+.dash-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.1); }
+.dash-card-icon { font-size: 28px; margin-bottom: 10px; }
+.dash-card-num { font-size: 36px; font-weight: 800; color: var(--dc); line-height: 1; }
+.dash-card-label { font-size: 14px; font-weight: 700; color: #1e293b; margin: 4px 0; }
+.dash-card-extra { font-size: 12px; color: #64748b; margin-bottom: 12px; }
+.dash-card-link { font-size: 13px; font-weight: 700; color: var(--dc); }
+
+.dash-recent {
+  background: #fff; border-radius: 16px; padding: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+}
+.dash-recent-title {
+  font-size: 15px; font-weight: 700; color: #1e293b;
+  margin-bottom: 14px;
+}
+.dash-recent-list { display: flex; flex-direction: column; gap: 8px; }
+.dash-recent-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px;
+  background: #f8fafc; border-radius: 8px;
+}
+.dash-recent-name { flex: 1; font-size: 14px; font-weight: 600; color: #1e293b; }
+.dash-recent-date { font-size: 12px; color: #94a3b8; }
+.dash-recent-badge {
+  font-size: 12px; font-weight: 700;
+  padding: 3px 10px; border-radius: 999px;
+}
+
+/* ─── Modal info grid ─────────────────────────────────────── */
+.modal-info-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  padding: 14px 20px;
+  background: #f8fafc; border-radius: 10px;
+  margin-bottom: 14px;
+}
+.modal-info-grid > div { display: flex; flex-direction: column; gap: 2px; }
+.modal-info-grid label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; font-weight: 700; }
+.modal-info-grid span  { font-size: 13px; font-weight: 600; color: #1e293b; }
+
+/* ─── Modal desglose EC ───────────────────────────────────── */
+.modal-elem-row {
+  display: flex; align-items: center; gap: 16px;
+  padding: 10px 0; border-bottom: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+}
+.modal-elem-row:last-child { border-bottom: none; }
+.modal-elem-info { flex: 1; min-width: 160px; }
+.modal-elem-num { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 2px; }
+.modal-elem-nombre { font-size: 13px; font-weight: 600; color: #1e293b; }
+.modal-elem-right { display: flex; align-items: center; gap: 10px; min-width: 200px; }
+.modal-elem-bar { flex: 1; height: 8px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+
+/* ─── Stat pct ────────────────────────────────────────────── */
+.stat-pct {
+  font-size: 12px; font-weight: 700;
+  color: var(--stat-color, #64748b);
+  margin-top: 2px;
+}
+
+/* ─── Admin loading ───────────────────────────────────────── */
+.admin-loading {
+  text-align: center; padding: 48px;
+  font-size: 15px; color: #64748b;
+}
+
+/* ─── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .dash-cards { grid-template-columns: 1fr; }
+  .admin-tabs { overflow-x: auto; }
+  .admin-tab  { white-space: nowrap; }
+  .modal-info-grid { grid-template-columns: 1fr; }
+}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { API_URL } from '../constants.js';
 import '../styles/admin.css';
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// ─── Constantes ───────────────────────────────────────────────────────────────
 const QUESTIONS_TEXT = [
   "Excedo el límite de velocidad.",
   "Manejo o viajo en un vehículo sin usar cinturón de seguridad.",
@@ -25,140 +25,98 @@ const QUESTIONS_TEXT = [
   "Cambio la música o los controles mientras estoy manejando.",
   "Puedo controlar lo que otros conductores hacen alrededor mío.",
 ];
-
-const FREQ_LABELS = ['Nunca', 'Rara vez', 'A veces', 'Frecuentemente', 'Siempre'];
-
-const RISK_CONFIG = {
+const FREQ_LABELS  = ['Nunca', 'Rara vez', 'A veces', 'Frecuentemente', 'Siempre'];
+const RISK_CONFIG  = {
   SEGURO:      { label: 'Conductor Seguro',    color: '#1b7f3e', bg: '#e8f5ee', dot: '🟢' },
   PRECAUCION:  { label: 'Precaución Moderada', color: '#c67c00', bg: '#fff3e0', dot: '🟡' },
   RIESGO:      { label: 'Perfil de Riesgo',    color: '#c84200', bg: '#fdecea', dot: '🟠' },
   ALTO_RIESGO: { label: 'Alto Riesgo',         color: '#a81010', bg: '#fce4e4', dot: '🔴' },
 };
+const REC_CONFIG = {
+  EVALUARSE:   { label: 'Listo para evaluarse',  color: '#065f46', bg: '#ecfdf5', dot: '✅' },
+  ASESORARSE:  { label: 'Requiere asesoría',      color: '#92400e', bg: '#fef3e2', dot: '📚' },
+};
+const PER_PAGE = 15;
 
-// ─── Login Screen ─────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const fmtDate  = (d) => new Date(d).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+const fmtDate2 = (d) => new Date(d).toLocaleDateString('es-MX', { year:'numeric', month:'long', day:'numeric' });
 
-
+// ─── Login ────────────────────────────────────────────────────────────────────
 function LoginScreen({ onLogin }) {
   const [password, setPassword] = useState('');
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
   const wrapRef = React.useRef(null);
 
-  // ── Efecto cursor ────────────────────────────────────────────
   React.useEffect(() => {
-    const target  = { mx: 0.5, my: 0.5, rx: 0, ry: 0, tx: 0, ty: 0 };
-    const current = { ...target };
+    const target = { mx:.5, my:.5, rx:0, ry:0, tx:0, ty:0 };
+    const curr   = { ...target };
     let rafId;
-
-    function lerp(a, b, t) { return a + (b - a) * t; }
-
+    const lerp = (a,b,t) => a + (b-a)*t;
     function tick() {
-      current.mx = lerp(current.mx, target.mx, 0.12);
-      current.my = lerp(current.my, target.my, 0.12);
-      current.rx = lerp(current.rx, target.rx, 0.10);
-      current.ry = lerp(current.ry, target.ry, 0.10);
-      current.tx = lerp(current.tx, target.tx, 0.10);
-      current.ty = lerp(current.ty, target.ty, 0.10);
-
-      const root = document.documentElement;
-      root.style.setProperty('--mx', (current.mx * 100).toFixed(2) + '%');
-      root.style.setProperty('--my', (current.my * 100).toFixed(2) + '%');
-      root.style.setProperty('--rx', current.rx.toFixed(2) + 'deg');
-      root.style.setProperty('--ry', current.ry.toFixed(2) + 'deg');
-      root.style.setProperty('--tx', current.tx.toFixed(1) + 'px');
-      root.style.setProperty('--ty', current.ty.toFixed(1) + 'px');
-
+      curr.mx = lerp(curr.mx, target.mx, .12); curr.my = lerp(curr.my, target.my, .12);
+      curr.rx = lerp(curr.rx, target.rx, .10); curr.ry = lerp(curr.ry, target.ry, .10);
+      curr.tx = lerp(curr.tx, target.tx, .10); curr.ty = lerp(curr.ty, target.ty, .10);
+      const r = document.documentElement;
+      r.style.setProperty('--mx', (curr.mx*100).toFixed(2)+'%');
+      r.style.setProperty('--my', (curr.my*100).toFixed(2)+'%');
+      r.style.setProperty('--rx', curr.rx.toFixed(2)+'deg');
+      r.style.setProperty('--ry', curr.ry.toFixed(2)+'deg');
+      r.style.setProperty('--tx', curr.tx.toFixed(1)+'px');
+      r.style.setProperty('--ty', curr.ty.toFixed(1)+'px');
       rafId = requestAnimationFrame(tick);
     }
     rafId = requestAnimationFrame(tick);
-
-    function onMove(e) {
-      const wrap = wrapRef.current;
-      if (!wrap) return;
-      const r = wrap.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width;
-      const y = (e.clientY - r.top)  / r.height;
-
+    const onMove = (e) => {
+      const w = wrapRef.current; if (!w) return;
+      const rc = w.getBoundingClientRect();
+      const x = (e.clientX - rc.left) / rc.width;
+      const y = (e.clientY - rc.top)  / rc.height;
       target.mx = e.clientX / window.innerWidth;
       target.my = e.clientY / window.innerHeight;
-
-      const tilt  = 10;
-      const shift = 10;
-      target.ry =  (x - 0.5) * tilt;
-      target.rx = -(y - 0.5) * tilt;
-      target.tx =  (x - 0.5) * shift;
-      target.ty =  (y - 0.5) * shift;
-    }
-
-    function onLeave() {
-      target.mx = 0.5; target.my = 0.5;
-      target.rx = 0;   target.ry = 0;
-      target.tx = 0;   target.ty = 0;
-    }
-
+      target.ry =  (x-.5)*10; target.rx = -(y-.5)*10;
+      target.tx =  (x-.5)*10; target.ty =  (y-.5)*10;
+    };
+    const onLeave = () => { target.mx=.5; target.my=.5; target.rx=0; target.ry=0; target.tx=0; target.ty=0; };
     window.addEventListener('pointermove', onMove);
     wrapRef.current?.addEventListener('pointerleave', onLeave);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      window.removeEventListener('pointermove', onMove);
-    };
+    return () => { cancelAnimationFrame(rafId); window.removeEventListener('pointermove', onMove); };
   }, []);
 
-  // ── Submit ───────────────────────────────────────────────────
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+    e.preventDefault(); setLoading(true); setError('');
     try {
-      const res = await fetch(`${API_URL}/api/admin/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
-      });
+      const res = await fetch(`${API_URL}/api/admin/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ password }) });
       if (!res.ok) throw new Error('Contraseña incorrecta');
       const { token } = await res.json();
       onLogin(token);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { setError(err.message); }
+    finally { setLoading(false); }
   };
 
   return (
     <div className="admin-login-wrapper">
       <div className="login-bg" />
-
       <div className="login-wrap" ref={wrapRef}>
         <div className="admin-login-card">
-
           <div className="login-header">
             <img src="/logo2.png" alt="Consultores CMC" className="login-logo" />
             <div className="login-divider" />
             <h1 className="login-title">Panel Administrativo</h1>
-            <p className="login-subtitle">Evaluación de Seguridad Vial</p>
+            <p className="login-subtitle">Consultores CMC · Centro de Diagnósticos</p>
           </div>
-
           <form onSubmit={handleSubmit} className="login-form">
             <div>
               <label className="login-label">Contraseña de acceso</label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="login-input"
-                placeholder="••••••••••••"
-                autoFocus
-                required
-              />
+              <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                className="login-input" placeholder="••••••••••••" autoFocus required />
             </div>
             {error && <p className="login-error">⚠ {error}</p>}
             <button type="submit" className="login-btn" disabled={loading}>
               {loading ? 'Verificando...' : 'Ingresar al Panel →'}
             </button>
           </form>
-
           <p className="login-footer">© {new Date().getFullYear()} Consultores CMC · Seguridad e Higiene</p>
         </div>
       </div>
@@ -166,323 +124,583 @@ function LoginScreen({ onLogin }) {
   );
 }
 
-// ─── Stats Cards ──────────────────────────────────────────────────────────────
-function StatsRow({ stats }) {
-  const riskOrder = ['SEGURO', 'PRECAUCION', 'RIESGO', 'ALTO_RIESGO'];
-  const byRiskMap = {};
-  (stats.byRisk || []).forEach(r => { byRiskMap[r.risk_level] = parseInt(r.count); });
-
-  return (
-    <div className="stats-row">
-      <div className="stat-card stat-total">
-        <div className="stat-icon">📋</div>
-        <div className="stat-value">{stats.total ?? '—'}</div>
-        <div className="stat-label">Total evaluaciones</div>
-      </div>
-      <div className="stat-card stat-avg">
-        <div className="stat-icon">📊</div>
-        <div className="stat-value">{stats.avgScore ?? '—'}<span className="stat-unit">/80</span></div>
-        <div className="stat-label">Puntuación promedio</div>
-      </div>
-      {riskOrder.map(key => {
-        const cfg   = RISK_CONFIG[key];
-        const count = byRiskMap[key] || 0;
-        const pct   = stats.total ? Math.round((count / stats.total) * 100) : 0;
-        return (
-          <div className="stat-card" key={key} style={{ '--stat-color': cfg.color, '--stat-bg': cfg.bg }}>
-            <div className="stat-icon">{cfg.dot}</div>
-            <div className="stat-value" style={{ color: cfg.color }}>{count}</div>
-            <div className="stat-label">{cfg.label}</div>
-            <div className="stat-bar-wrap">
-              <div className="stat-bar-fill" style={{ width: `${pct}%`, background: cfg.color }} />
-            </div>
-            <div className="stat-pct">{pct}%</div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─── Detail Modal ─────────────────────────────────────────────────────────────
-function DetailModal({ evalId, token, onClose }) {
-  const [data, setData]     = useState(null);
+// ─── Dashboard Global ─────────────────────────────────────────────────────────
+function Dashboard({ token, onNavigate }) {
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const authH = { Authorization: `Bearer ${token}` };
 
   useEffect(() => {
-    fetch(`${API_URL}/api/admin/evaluaciones/${evalId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.json())
-      .then(d => { setData(d); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, [evalId, token]);
+    Promise.all([
+      fetch(`${API_URL}/api/admin/stats`,        { headers: authH }).then(r => r.json()),
+      fetch(`${API_URL}/api/admin/stats/global`,  { headers: authH }).then(r => r.json()),
+    ]).then(([ds, global]) => {
+      setStats({ ds, global });
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
 
-  if (loading) return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card">
-        <div className="modal-loading">Cargando detalle...</div>
-      </div>
-    </div>
-  );
+  if (loading) return <div className="admin-loading">Cargando estadísticas...</div>;
+  if (!stats)  return <div className="admin-loading">Error al cargar estadísticas.</div>;
 
-  if (!data) return null;
+  const { ds, global } = stats;
+  const totalGlobal = (global?.drivesafe?.total || 0) + (global?.ec0217?.total || 0) + (global?.ec0301?.total || 0);
 
-  const risk    = RISK_CONFIG[data.risk_level] || RISK_CONFIG.PRECAUCION;
-  const answers = data.answers || [];
-  const date    = new Date(data.fecha).toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' });
-
-  const handlePrint = () => {
-    const answersRows = answers.map((ans, i) => {
-      const val   = ans.value ?? 0;
-      const label = FREQ_LABELS[val] || '-';
-      const color = val >= 3 ? '#c01515' : val === 2 ? '#c67c00' : '#1b7f3e';
-      return `<tr>
-        <td style="padding:6px 10px;font-size:12px;border-bottom:1px solid #eef0f4;">${QUESTIONS_TEXT[i] || ''}</td>
-        <td style="padding:6px 10px;text-align:center;font-size:12px;font-weight:600;color:${color};border-bottom:1px solid #eef0f4;">${label}</td>
-        <td style="padding:6px 10px;text-align:center;font-size:12px;font-weight:700;color:${color};border-bottom:1px solid #eef0f4;">${val}/4</td>
-      </tr>`;
-    }).join('');
-
-    const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Evaluación – ${data.nombre}</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:Barlow,sans-serif;background:#f4f6fa;color:#1a2e4a;-webkit-print-color-adjust:exact}
-  .page{max-width:800px;margin:0 auto;background:#fff}
-  .pdf-header{background:linear-gradient(135deg,#1a2e4a,#0f4c75);padding:28px 36px;display:flex;justify-content:space-between;align-items:center}
-  .pdf-header h1{font-size:16px;color:rgba(255,255,255,.7);font-weight:400}
-  .pdf-header p{font-size:11px;color:rgba(255,255,255,.5);margin-top:3px}
-  .pdf-logo{height:44px}
-  .hero{background:${risk.bg};border-left:6px solid ${risk.color};padding:24px 36px;display:flex;align-items:center;gap:20px}
-  .circle{width:80px;height:80px;border-radius:50%;background:${risk.color};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
-  .circle-num{font-size:26px;font-weight:800;color:#fff;line-height:1}
-  .circle-max{font-size:11px;color:rgba(255,255,255,.75)}
-  .risk-label{font-size:22px;font-weight:800;color:${risk.color};text-transform:uppercase}
-  .risk-sub{font-size:13px;color:#666;margin-top:4px}
-  .section{padding:20px 36px;border-bottom:1px solid #eef0f4}
-  .section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#888;margin-bottom:10px}
-  .summary{font-size:14px;line-height:1.7;color:#2d3748}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:20px 36px}
-  .box{border:1px solid #eef0f4;border-radius:10px;padding:16px}
-  .box-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
-  .rt{color:#c01515}.gt{color:#1b7f3e}
-  .box ul{list-style:none}.box li{font-size:12px;color:#2d3748;padding:5px 0;border-bottom:1px solid #f5f5f5;display:flex;gap:6px;line-height:1.4}
-  table{width:100%;border-collapse:collapse}
-  th{background:#1a2e4a;color:#fff;padding:8px 10px;font-size:11px;text-align:left}
-  th:nth-child(2),th:nth-child(3){text-align:center}
-  tr:nth-child(even) td{background:#f8f9fc}
-  .footer{background:#1a2e4a;padding:14px 36px;display:flex;justify-content:space-between}
-  .footer span{font-size:11px;color:rgba(255,255,255,.6)}
-</style>
-</head>
-<body>
-<div class="page">
-  <div class="pdf-header">
-    <img src="${window.location.origin}/logo2.png" class="pdf-logo" alt="CMC">
-    <div><h1>Evaluación de Seguridad Vial</h1><p>${date}</p></div>
-  </div>
-  <div class="hero">
-    <div class="circle"><div class="circle-num">${data.total_score}</div><div class="circle-max">/${data.max_score}</div></div>
-    <div>
-      <div style="font-size:28px;margin-bottom:4px">${risk.dot}</div>
-      <div class="risk-label">${risk.label}</div>
-      <div class="risk-sub">Evaluado a: <strong>${data.nombre}</strong> · ${data.pct}% de la puntuación máxima</div>
-    </div>
-  </div>
-  <div class="section">
-    <div class="section-title">🧠 Análisis personalizado</div>
-    <p class="summary">${data.summary || ''}</p>
-  </div>
-  <div class="grid">
-    <div class="box">
-      <div class="box-title rt">⚠ Riesgos críticos</div>
-      <ul>${(data.top_risks || []).map(r => `<li><span style="color:#c01515;font-weight:700">▶</span>${r}</li>`).join('')}</ul>
-    </div>
-    <div class="box">
-      <div class="box-title gt">✅ Recomendaciones</div>
-      <ul>${(data.recommendations || []).map(r => `<li><span style="color:#1b7f3e;font-weight:700">▶</span>${r}</li>`).join('')}</ul>
-    </div>
-  </div>
-  <div class="section">
-    <div class="section-title">📋 Detalle de respuestas</div>
-    <table>
-      <thead><tr><th>Conducta evaluada</th><th>Frecuencia</th><th>Puntos</th></tr></thead>
-      <tbody>${answersRows}</tbody>
-    </table>
-  </div>
-  <div class="footer">
-    <span>Consultores CMC · consultorescmc.com</span>
-    <span>Esta evaluación es una herramienta educativa</span>
-  </div>
-</div>
-<script>window.onload=()=>window.print()</script>
-</body></html>`;
-    const win = window.open('', '_blank');
-    win.document.write(html);
-    win.document.close();
-  };
+  const cards = [
+    {
+      icon: '🚗', label: 'DriveSafe IQ', color: '#1a2e4a', bg: '#e8f0fe',
+      total: global?.drivesafe?.total || 0,
+      extra: `Puntaje promedio: ${global?.drivesafe?.avgScore || 0}/80`,
+      tab: 'drivesafe',
+    },
+    {
+      icon: '📋', label: 'EC0217 · Impartición', color: '#065f46', bg: '#ecfdf5',
+      total: global?.ec0217?.total || 0,
+      extra: `Aptos: ${global?.ec0217?.aptos || 0} · Promedio: ${global?.ec0217?.avgPct || 0}%`,
+      tab: 'ec0217',
+    },
+    {
+      icon: '📐', label: 'EC0301 · Diseño', color: '#7c3aed', bg: '#f5f3ff',
+      total: global?.ec0301?.total || 0,
+      extra: `Aptos: ${global?.ec0301?.aptos || 0} · Promedio: ${global?.ec0301?.avgPct || 0}%`,
+      tab: 'ec0301',
+    },
+  ];
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={e => e.stopPropagation()}>
-        <div className="modal-header" style={{ borderColor: risk.color }}>
-          <div>
-            <h2 className="modal-name">{data.nombre}</h2>
-            <p className="modal-date">{date}</p>
-          </div>
-          <div className="modal-score-badge" style={{ background: risk.bg, color: risk.color, borderColor: risk.color }}>
-            <span className="modal-score-num">{data.total_score}/{data.max_score}</span>
-            <span className="modal-risk-label">{risk.label}</span>
-          </div>
-        </div>
-
-        <div className="modal-body">
-          <div className="modal-summary-box">
-            <h4 className="modal-section-title">🧠 Análisis</h4>
-            <p className="modal-summary">{data.summary}</p>
-          </div>
-
-          <div className="modal-grid-2">
-            <div className="modal-box">
-              <h4 className="modal-box-title" style={{ color: '#c01515' }}>⚠ Riesgos</h4>
-              {(data.top_risks || []).map((r, i) => (
-                <div key={i} className="modal-list-item modal-risk-item">
-                  <span className="modal-bullet" style={{ color: '#c01515' }}>▶</span>{r}
-                </div>
-              ))}
-            </div>
-            <div className="modal-box">
-              <h4 className="modal-box-title" style={{ color: '#1b7f3e' }}>✅ Recomendaciones</h4>
-              {(data.recommendations || []).map((r, i) => (
-                <div key={i} className="modal-list-item modal-rec-item">
-                  <span className="modal-bullet" style={{ color: '#1b7f3e' }}>▶</span>{r}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="modal-answers-section">
-            <h4 className="modal-section-title">📋 Respuestas detalladas</h4>
-            <div className="modal-answers-table">
-              <div className="answers-table-header">
-                <span>Pregunta</span>
-                <span>Respuesta</span>
-                <span>Pts</span>
-              </div>
-              {answers.map((ans, i) => {
-                const val   = ans.value ?? 0;
-                const color = val >= 3 ? '#c01515' : val === 2 ? '#c67c00' : '#1b7f3e';
-                return (
-                  <div key={i} className="answers-table-row">
-                    <span className="answer-question">{QUESTIONS_TEXT[i] || `Pregunta ${i+1}`}</span>
-                    <span className="answer-freq" style={{ color }}>{FREQ_LABELS[val]}</span>
-                    <span className="answer-pts" style={{ color }}>{val}/4</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        <div className="modal-footer">
-          <button className="modal-btn-close" onClick={onClose}>✕ Cerrar</button>
-          <button className="modal-btn-print" onClick={handlePrint}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-              <path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
-              <path d="M6 14h12v8H6z"/>
-            </svg>
-            Descargar PDF
-          </button>
-        </div>
+    <div className="dash-root">
+      <div className="dash-hero">
+        <div className="dash-hero-num">{totalGlobal}</div>
+        <div className="dash-hero-label">diagnósticos totales registrados</div>
       </div>
+
+      <div className="dash-cards">
+        {cards.map(c => (
+          <div key={c.tab} className="dash-card" style={{ '--dc': c.color, '--dbg': c.bg }}
+            onClick={() => onNavigate(c.tab)}>
+            <div className="dash-card-icon">{c.icon}</div>
+            <div className="dash-card-num">{c.total}</div>
+            <div className="dash-card-label">{c.label}</div>
+            <div className="dash-card-extra">{c.extra}</div>
+            <div className="dash-card-link">Ver registros →</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Recent DriveSafe */}
+      {ds?.recent?.length > 0 && (
+        <div className="dash-recent">
+          <h3 className="dash-recent-title">🕐 Últimas evaluaciones DriveSafe</h3>
+          <div className="dash-recent-list">
+            {ds.recent.map((r, i) => {
+              const risk = RISK_CONFIG[r.risk_level] || RISK_CONFIG.PRECAUCION;
+              return (
+                <div key={i} className="dash-recent-row">
+                  <span className="dash-recent-name">{r.nombre}</span>
+                  <span className="dash-recent-date">{fmtDate(r.fecha)}</span>
+                  <span className="dash-recent-badge" style={{ background: risk.bg, color: risk.color }}>
+                    {risk.dot} {risk.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// ─── Main Admin Panel ─────────────────────────────────────────────────────────
-export default function AdminPanel() {
-  const [token, setToken]             = useState(() => sessionStorage.getItem('admin_token') || '');
-  const [evaluaciones, setEvaluaciones] = useState([]);
-  const [stats, setStats]             = useState({});
-  const [loading, setLoading]         = useState(false);
-  const [selectedId, setSelectedId]   = useState(null);
-  const [search, setSearch]           = useState('');
-  const [filterRisk, setFilterRisk]   = useState('ALL');
-  const [sortBy, setSortBy]           = useState('fecha');
-  const [sortDir, setSortDir]         = useState('desc');
-  const [page, setPage]               = useState(1);
-  const PER_PAGE = 15;
-
-  const authHeaders = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+// ─── Tabla DriveSafe (original ampliada) ──────────────────────────────────────
+function TablaDriveSafe({ token, onLogout }) {
+  const [rows, setRows]       = useState([]);
+  const [stats, setStats]     = useState({});
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch]   = useState('');
+  const [filterRisk, setFilterRisk] = useState('ALL');
+  const [sortBy, setSortBy]   = useState('fecha');
+  const [sortDir, setSortDir] = useState('desc');
+  const [page, setPage]       = useState(1);
+  const [selectedId, setSelectedId] = useState(null);
+  const authH = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
   const fetchAll = useCallback(async () => {
-    if (!token) return;
     setLoading(true);
     try {
       const [evRes, stRes] = await Promise.all([
-        fetch(`${API_URL}/api/admin/evaluaciones`, { headers: authHeaders }),
-        fetch(`${API_URL}/api/admin/stats`,         { headers: authHeaders }),
+        fetch(`${API_URL}/api/admin/evaluaciones`, { headers: authH }),
+        fetch(`${API_URL}/api/admin/stats`,         { headers: authH }),
       ]);
-      if (evRes.status === 401) { handleLogout(); return; }
-      setEvaluaciones(await evRes.json());
+      if (evRes.status === 401) { onLogout(); return; }
+      setRows(await evRes.json());
       setStats(await stRes.json());
-    } catch (err) { console.error(err); }
+    } catch(e) { console.error(e); }
     finally { setLoading(false); }
   }, [token]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  const handleLogin = (t) => { sessionStorage.setItem('admin_token', t); setToken(t); };
-  const handleLogout = () => { sessionStorage.removeItem('admin_token'); setToken(''); };
-
   const handleDelete = async (id, name) => {
     if (!window.confirm(`¿Eliminar la evaluación de "${name}"?`)) return;
-    await fetch(`${API_URL}/api/admin/evaluaciones/${id}`, { method: 'DELETE', headers: authHeaders });
+    await fetch(`${API_URL}/api/admin/evaluaciones/${id}`, { method:'DELETE', headers: authH });
     fetchAll();
   };
+  const handleExport = () => {
+    fetch(`${API_URL}/api/admin/export/csv`, { headers: authH })
+      .then(r => r.blob()).then(blob => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = 'drivesafe-evaluaciones.csv'; a.click();
+      });
+  };
 
-const handleExport = () => {
-  fetch(`${API_URL}/api/admin/export/csv`, { headers: authHeaders })
-    .then(r => r.blob())
-    .then(blob => {
-      const url = URL.createObjectURL(blob);
-      const a   = document.createElement('a');
-      a.href = url; a.download = 'evaluaciones-cmc.csv'; a.click();
-      URL.revokeObjectURL(url);
-    });
-};
-
-  if (!token) return <LoginScreen onLogin={handleLogin} />;
-
-  // Filtrar y ordenar
-  let filtered = evaluaciones.filter(e => {
-    const matchSearch = !search || e.nombre.toLowerCase().includes(search.toLowerCase());
-    const matchRisk   = filterRisk === 'ALL' || e.risk_level === filterRisk;
-    return matchSearch && matchRisk;
-  });
-
-  filtered.sort((a, b) => {
+  let filtered = rows.filter(e => {
+    const ms = !search || e.nombre.toLowerCase().includes(search.toLowerCase());
+    const mr = filterRisk === 'ALL' || e.risk_level === filterRisk;
+    return ms && mr;
+  }).sort((a,b) => {
     let va = a[sortBy], vb = b[sortBy];
     if (sortBy === 'fecha') { va = new Date(va); vb = new Date(vb); }
     return sortDir === 'asc' ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
   });
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
-  const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const paginated  = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE);
+  const toggleSort = (col) => { if (sortBy===col) setSortDir(d=>d==='asc'?'desc':'asc'); else { setSortBy(col); setSortDir('desc'); } };
+  const SortIcon = ({col}) => sortBy===col ? <span className="sort-icon-active">{sortDir==='asc'?'↑':'↓'}</span> : <span className="sort-icon-neutral">↕</span>;
 
-  const toggleSort = (col) => {
-    if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortBy(col); setSortDir('desc'); }
+  // Stats row
+  const byRiskMap = {};
+  (stats.byRisk||[]).forEach(r => { byRiskMap[r.risk_level] = parseInt(r.count); });
+
+  return (
+    <div className="tab-content">
+      {/* Mini stats */}
+      <div className="stats-row">
+        <div className="stat-card stat-total">
+          <div className="stat-icon">📋</div>
+          <div className="stat-value">{stats.total ?? '—'}</div>
+          <div className="stat-label">Total evaluaciones</div>
+        </div>
+        <div className="stat-card stat-avg">
+          <div className="stat-icon">📊</div>
+          <div className="stat-value">{stats.avgScore ?? '—'}<span className="stat-unit">/80</span></div>
+          <div className="stat-label">Puntuación promedio</div>
+        </div>
+        {['SEGURO','PRECAUCION','RIESGO','ALTO_RIESGO'].map(key => {
+          const cfg = RISK_CONFIG[key];
+          const count = byRiskMap[key] || 0;
+          const pct = stats.total ? Math.round((count/stats.total)*100) : 0;
+          return (
+            <div className="stat-card" key={key} style={{'--stat-color':cfg.color,'--stat-bg':cfg.bg}}>
+              <div className="stat-icon">{cfg.dot}</div>
+              <div className="stat-value" style={{color:cfg.color}}>{count}</div>
+              <div className="stat-label">{cfg.label}</div>
+              <div className="stat-pct">{pct}%</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Filtros */}
+      <div className="admin-filters">
+        <input type="text" placeholder="🔍 Buscar por nombre..." value={search}
+          onChange={e => { setSearch(e.target.value); setPage(1); }} className="filter-search" />
+        <select value={filterRisk} onChange={e => { setFilterRisk(e.target.value); setPage(1); }} className="filter-select">
+          <option value="ALL">Todos los niveles</option>
+          {Object.entries(RISK_CONFIG).map(([k,v]) => <option key={k} value={k}>{v.dot} {v.label}</option>)}
+        </select>
+        <button className="admin-btn-csv" onClick={handleExport}>📥 CSV</button>
+        <button className="admin-btn-outline" onClick={fetchAll} disabled={loading}>⟳ Actualizar</button>
+        <span className="filter-count">{filtered.length} resultados</span>
+      </div>
+
+      {/* Tabla */}
+      <div className="admin-table-wrap">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th onClick={() => toggleSort('id')}># <SortIcon col="id" /></th>
+              <th onClick={() => toggleSort('nombre')}>Nombre <SortIcon col="nombre" /></th>
+              <th onClick={() => toggleSort('fecha')}>Fecha <SortIcon col="fecha" /></th>
+              <th onClick={() => toggleSort('total_score')}>Puntuación <SortIcon col="total_score" /></th>
+              <th onClick={() => toggleSort('risk_level')}>Nivel <SortIcon col="risk_level" /></th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginated.length === 0 && <tr><td colSpan="6" className="td-empty">{loading ? 'Cargando...' : 'Sin resultados'}</td></tr>}
+            {paginated.map(ev => {
+              const risk = RISK_CONFIG[ev.risk_level] || RISK_CONFIG.PRECAUCION;
+              const pct  = Math.round((ev.total_score / ev.max_score) * 100);
+              return (
+                <tr key={ev.id} className="admin-row">
+                  <td className="td-id">{ev.id}</td>
+                  <td className="td-name">{ev.nombre}</td>
+                  <td className="td-date">{fmtDate(ev.fecha)}</td>
+                  <td className="td-score">
+                    <div className="score-pill">
+                      <span className="score-pill-num">{ev.total_score}<span className="score-pill-max">/80</span></span>
+                      <div className="score-mini-bar"><div className="score-mini-fill" style={{width:`${pct}%`,background:risk.color}}/></div>
+                    </div>
+                  </td>
+                  <td><span className="risk-badge" style={{background:risk.bg,color:risk.color,borderColor:risk.color}}>{risk.dot} {risk.label}</span></td>
+                  <td className="td-actions">
+                    <button className="action-btn action-view" onClick={() => setSelectedId(ev.id)}>👁 Ver</button>
+                    <button className="action-btn action-delete" onClick={() => handleDelete(ev.id, ev.nombre)}>🗑</button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {totalPages > 1 && (
+        <div className="admin-pagination">
+          <button className="page-btn" onClick={() => setPage(p=>Math.max(1,p-1))} disabled={page===1}>← Anterior</button>
+          <span className="page-info">Página {page} de {totalPages}</span>
+          <button className="page-btn" onClick={() => setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages}>Siguiente →</button>
+        </div>
+      )}
+      {selectedId && <DetailModalDS evalId={selectedId} token={token} onClose={() => setSelectedId(null)} />}
+    </div>
+  );
+}
+
+// ─── Tabla EC (EC0217 y EC0301) ───────────────────────────────────────────────
+function TablaEC({ token, tipo, onLogout }) {
+  const [rows, setRows]       = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch]   = useState('');
+  const [filterRec, setFilterRec] = useState('ALL');
+  const [sortBy, setSortBy]   = useState('fecha');
+  const [sortDir, setSortDir] = useState('desc');
+  const [page, setPage]       = useState(1);
+  const [selectedId, setSelectedId] = useState(null);
+  const authH = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  const endpoint = tipo === 'ec0217' ? 'ec0217' : 'ec0301';
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/${endpoint}`, { headers: authH });
+      if (res.status === 401) { onLogout(); return; }
+      setRows(await res.json());
+    } catch(e) { console.error(e); }
+    finally { setLoading(false); }
+  }, [token, tipo]);
+
+  useEffect(() => { fetchAll(); setPage(1); setSearch(''); setFilterRec('ALL'); }, [tipo]);
+
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`¿Eliminar el diagnóstico de "${name}"?`)) return;
+    await fetch(`${API_URL}/api/admin/${endpoint}/${id}`, { method:'DELETE', headers: authH });
+    fetchAll();
+  };
+  const handleExport = () => {
+    fetch(`${API_URL}/api/admin/${endpoint}/export/csv`, { headers: authH })
+      .then(r => r.blob()).then(blob => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = `${endpoint}-diagnosticos.csv`; a.click();
+      });
   };
 
-  const SortIcon = ({ col }) => {
-    if (sortBy !== col) return <span className="sort-icon-neutral">↕</span>;
-    return <span className="sort-icon-active">{sortDir === 'asc' ? '↑' : '↓'}</span>;
-  };
+  // Stats rápidas
+  const total    = rows.length;
+  const aptos    = rows.filter(r => r.recomendacion === 'EVALUARSE').length;
+  const avgPct   = total ? (rows.reduce((s,r) => s + parseFloat(r.porcentaje), 0) / total).toFixed(1) : 0;
+
+  let filtered = rows.filter(r => {
+    const ms = !search || r.nombre.toLowerCase().includes(search.toLowerCase()) || (r.empresa||'').toLowerCase().includes(search.toLowerCase());
+    const mr = filterRec === 'ALL' || r.recomendacion === filterRec;
+    return ms && mr;
+  }).sort((a,b) => {
+    let va = a[sortBy], vb = b[sortBy];
+    if (sortBy === 'fecha') { va = new Date(va); vb = new Date(vb); }
+    if (sortBy === 'porcentaje') { va = parseFloat(va); vb = parseFloat(vb); }
+    return sortDir === 'asc' ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+  });
+
+  const totalPages = Math.ceil(filtered.length / PER_PAGE);
+  const paginated  = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE);
+  const toggleSort = (col) => { if (sortBy===col) setSortDir(d=>d==='asc'?'desc':'asc'); else { setSortBy(col); setSortDir('desc'); } };
+  const SortIcon = ({col}) => sortBy===col ? <span className="sort-icon-active">{sortDir==='asc'?'↑':'↓'}</span> : <span className="sort-icon-neutral">↕</span>;
+
+  return (
+    <div className="tab-content">
+      {/* Mini stats EC */}
+      <div className="stats-row">
+        <div className="stat-card stat-total">
+          <div className="stat-icon">📋</div>
+          <div className="stat-value">{total}</div>
+          <div className="stat-label">Total diagnósticos</div>
+        </div>
+        <div className="stat-card" style={{'--stat-color':'#065f46','--stat-bg':'#ecfdf5'}}>
+          <div className="stat-icon">✅</div>
+          <div className="stat-value" style={{color:'#065f46'}}>{aptos}</div>
+          <div className="stat-label">Listos para evaluarse</div>
+          <div className="stat-pct">{total ? Math.round((aptos/total)*100) : 0}%</div>
+        </div>
+        <div className="stat-card" style={{'--stat-color':'#92400e','--stat-bg':'#fef3e2'}}>
+          <div className="stat-icon">📚</div>
+          <div className="stat-value" style={{color:'#92400e'}}>{total - aptos}</div>
+          <div className="stat-label">Requieren asesoría</div>
+          <div className="stat-pct">{total ? Math.round(((total-aptos)/total)*100) : 0}%</div>
+        </div>
+        <div className="stat-card stat-avg">
+          <div className="stat-icon">📊</div>
+          <div className="stat-value">{avgPct}<span className="stat-unit">%</span></div>
+          <div className="stat-label">Porcentaje promedio</div>
+        </div>
+      </div>
+
+      {/* Filtros */}
+      <div className="admin-filters">
+        <input type="text" placeholder="🔍 Buscar por nombre o empresa..." value={search}
+          onChange={e => { setSearch(e.target.value); setPage(1); }} className="filter-search" />
+        <select value={filterRec} onChange={e => { setFilterRec(e.target.value); setPage(1); }} className="filter-select">
+          <option value="ALL">Todas las recomendaciones</option>
+          <option value="EVALUARSE">✅ Listos para evaluarse</option>
+          <option value="ASESORARSE">📚 Requieren asesoría</option>
+        </select>
+        <button className="admin-btn-csv" onClick={handleExport}>📥 CSV</button>
+        <button className="admin-btn-outline" onClick={fetchAll} disabled={loading}>⟳ Actualizar</button>
+        <span className="filter-count">{filtered.length} resultados</span>
+      </div>
+
+      {/* Tabla */}
+      <div className="admin-table-wrap">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th onClick={() => toggleSort('id')}># <SortIcon col="id" /></th>
+              <th onClick={() => toggleSort('nombre')}>Nombre <SortIcon col="nombre" /></th>
+              <th>Empresa / Sector</th>
+              <th>Ubicación</th>
+              <th onClick={() => toggleSort('fecha')}>Fecha <SortIcon col="fecha" /></th>
+              <th onClick={() => toggleSort('porcentaje')}>% <SortIcon col="porcentaje" /></th>
+              <th onClick={() => toggleSort('recomendacion')}>Recomendación <SortIcon col="recomendacion" /></th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginated.length === 0 && <tr><td colSpan="8" className="td-empty">{loading ? 'Cargando...' : 'Sin resultados'}</td></tr>}
+            {paginated.map(ev => {
+              const rec = REC_CONFIG[ev.recomendacion] || REC_CONFIG.ASESORARSE;
+              const pct = parseFloat(ev.porcentaje);
+              return (
+                <tr key={ev.id} className="admin-row">
+                  <td className="td-id">{ev.id}</td>
+                  <td className="td-name">
+                    <div>{ev.nombre}</div>
+                    <div style={{fontSize:'12px',color:'#94a3b8'}}>{ev.correo}</div>
+                  </td>
+                  <td className="td-date">
+                    <div>{ev.empresa || <span style={{color:'#94a3b8'}}>Independiente</span>}</div>
+                    {ev.sector && <div style={{fontSize:'12px',color:'#94a3b8'}}>{ev.sector}</div>}
+                  </td>
+                  <td className="td-date">{ev.ciudad}, {ev.estado}</td>
+                  <td className="td-date">{fmtDate(ev.fecha)}</td>
+                  <td className="td-score">
+                    <div className="score-pill">
+                      <span className="score-pill-num">{pct}<span className="score-pill-max">%</span></span>
+                      <div className="score-mini-bar">
+                        <div className="score-mini-fill" style={{width:`${pct}%`, background: pct>=90?'#059669':pct>=70?'#d97706':'#dc2626'}}/>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span className="risk-badge" style={{background:rec.bg,color:rec.color,borderColor:rec.color}}>{rec.dot} {rec.label}</span></td>
+                  <td className="td-actions">
+                    <button className="action-btn action-view" onClick={() => setSelectedId(ev.id)}>👁 Ver</button>
+                    <button className="action-btn action-delete" onClick={() => handleDelete(ev.id, ev.nombre)}>🗑</button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {totalPages > 1 && (
+        <div className="admin-pagination">
+          <button className="page-btn" onClick={() => setPage(p=>Math.max(1,p-1))} disabled={page===1}>← Anterior</button>
+          <span className="page-info">Página {page} de {totalPages}</span>
+          <button className="page-btn" onClick={() => setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages}>Siguiente →</button>
+        </div>
+      )}
+      {selectedId && <DetailModalEC evalId={selectedId} token={token} tipo={tipo} onClose={() => setSelectedId(null)} />}
+    </div>
+  );
+}
+
+// ─── Modal Detalle DriveSafe ──────────────────────────────────────────────────
+function DetailModalDS({ evalId, token, onClose }) {
+  const [data, setData] = useState(null);
+  const authH = { Authorization: `Bearer ${token}` };
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/admin/evaluaciones/${evalId}`, { headers: authH })
+      .then(r => r.json()).then(setData);
+  }, [evalId]);
+
+  if (!data) return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" onClick={e => e.stopPropagation()}>
+        <div className="modal-loading">Cargando...</div>
+      </div>
+    </div>
+  );
+
+  const risk    = RISK_CONFIG[data.risk_level] || RISK_CONFIG.PRECAUCION;
+  const answers = Array.isArray(data.answers) ? data.answers : [];
+  const pct     = Math.round((data.total_score / data.max_score) * 100);
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <div>
+            <h2 className="modal-title">{data.nombre}</h2>
+            <p className="modal-subtitle">DriveSafe IQ · {fmtDate2(data.fecha)}</p>
+          </div>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-hero" style={{background:risk.bg, borderColor:risk.color}}>
+          <div className="modal-score" style={{background:risk.color}}>
+            <span>{data.total_score}</span><small>/{data.max_score}</small>
+          </div>
+          <div>
+            <div className="modal-risk-label" style={{color:risk.color}}>{risk.dot} {risk.label}</div>
+            <div className="modal-risk-pct">{pct}% de la puntuación máxima</div>
+          </div>
+        </div>
+        <div className="modal-answers">
+          <h3 className="modal-section-title">Respuestas detalladas</h3>
+          {answers.map((ans, i) => {
+            const val   = ans.value ?? 0;
+            const label = FREQ_LABELS[val] || '-';
+            const color = val >= 3 ? '#c01515' : val === 2 ? '#c67c00' : '#1b7f3e';
+            return (
+              <div key={i} className="modal-answer-row">
+                <span className="modal-q-num">{i+1}.</span>
+                <span className="modal-q-text">{QUESTIONS_TEXT[i] || `Pregunta ${i+1}`}</span>
+                <span className="modal-q-ans" style={{color}}>{label}</span>
+                <span className="modal-q-val" style={{color}}>{val}/4</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Modal Detalle EC ─────────────────────────────────────────────────────────
+function DetailModalEC({ evalId, token, tipo, onClose }) {
+  const [data, setData] = useState(null);
+  const authH = { Authorization: `Bearer ${token}` };
+  const endpoint = tipo === 'ec0217' ? 'ec0217' : 'ec0301';
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/admin/${endpoint}/${evalId}`, { headers: authH })
+      .then(r => r.json()).then(setData);
+  }, [evalId]);
+
+  if (!data) return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" onClick={e => e.stopPropagation()}>
+        <div className="modal-loading">Cargando...</div>
+      </div>
+    </div>
+  );
+
+  const rec  = REC_CONFIG[data.recomendacion] || REC_CONFIG.ASESORARSE;
+  const pct  = parseFloat(data.porcentaje);
+  const codigo = tipo === 'ec0217' ? 'EC0217.01' : 'EC0301';
+
+  const elemNombres = tipo === 'ec0217'
+    ? ['Preparar la sesión / curso', 'Conducir la sesión / curso', 'Evaluar la sesión / curso']
+    : ['Diseñar cursos de formación', 'Diseñar instrumentos de evaluación', 'Diseñar manuales del curso'];
+
+  const desglose = [
+    { si: data.elem1_si, total: data.elem1_total, nombre: elemNombres[0] },
+    { si: data.elem2_si, total: data.elem2_total, nombre: elemNombres[1] },
+    { si: data.elem3_si, total: data.elem3_total, nombre: elemNombres[2] },
+  ];
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-card" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <div>
+            <h2 className="modal-title">{data.nombre}</h2>
+            <p className="modal-subtitle">{codigo} · {fmtDate2(data.fecha)}</p>
+          </div>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+
+        {/* Info candidato */}
+        <div className="modal-info-grid">
+          <div><label>Correo</label><span>{data.correo}</span></div>
+          {data.empresa && <div><label>Empresa</label><span>{data.empresa}</span></div>}
+          {data.sector  && <div><label>Sector</label><span>{data.sector}</span></div>}
+          <div><label>Ubicación</label><span>{data.ciudad}, {data.estado}</span></div>
+        </div>
+
+        {/* Hero resultado */}
+        <div className="modal-hero" style={{background:rec.bg, borderColor:rec.color}}>
+          <div className="modal-score" style={{background:rec.color}}>
+            <span>{pct}%</span><small>{data.total_si}/{data.total_reactivos}</small>
+          </div>
+          <div>
+            <div className="modal-risk-label" style={{color:rec.color}}>{rec.dot} Se recomienda: {data.recomendacion}</div>
+            <div className="modal-risk-pct">Umbral de aprobación: 90%</div>
+          </div>
+        </div>
+
+        {/* Desglose por elemento */}
+        <div className="modal-answers">
+          <h3 className="modal-section-title">Desglose por elemento</h3>
+          {desglose.map((el, i) => {
+            const epct  = Math.round((el.si / el.total) * 100);
+            const ecolor = epct >= 90 ? '#059669' : epct >= 70 ? '#d97706' : '#dc2626';
+            return (
+              <div key={i} className="modal-elem-row">
+                <div className="modal-elem-info">
+                  <span className="modal-elem-num">Elemento {i+1}</span>
+                  <span className="modal-elem-nombre">{el.nombre}</span>
+                </div>
+                <div className="modal-elem-right">
+                  <div className="modal-elem-bar">
+                    <div style={{width:`${epct}%`, height:'100%', background:ecolor, borderRadius:'999px', transition:'width .5s'}}/>
+                  </div>
+                  <span style={{color:ecolor, fontWeight:700, fontSize:'13px', minWidth:'80px', textAlign:'right'}}>
+                    {el.si}/{el.total} · {epct}%
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Admin Panel Principal ────────────────────────────────────────────────────
+export default function AdminPanel() {
+  const [token, setToken]   = useState(() => sessionStorage.getItem('admin_token') || '');
+  const [tab, setTab]       = useState('dashboard');
+
+  const handleLogin  = (t) => { sessionStorage.setItem('admin_token', t); setToken(t); };
+  const handleLogout = ()  => { sessionStorage.removeItem('admin_token'); setToken(''); };
+
+  if (!token) return <LoginScreen onLogin={handleLogin} />;
+
+  const TABS = [
+    { id: 'dashboard', icon: '🏠', label: 'Dashboard' },
+    { id: 'drivesafe', icon: '🚗', label: 'DriveSafe IQ' },
+    { id: 'ec0217',    icon: '📋', label: 'EC0217' },
+    { id: 'ec0301',    icon: '📐', label: 'EC0301' },
+  ];
 
   return (
     <div className="admin-wrapper">
@@ -493,119 +711,32 @@ const handleExport = () => {
             <img src="/logo2.png" alt="CMC" className="admin-logo" />
             <div>
               <h1 className="admin-title">Panel Administrativo</h1>
-              <p className="admin-subtitle">Evaluación de Seguridad Vial</p>
+              <p className="admin-subtitle">Consultores CMC · Centro de Diagnósticos</p>
             </div>
           </div>
-          <div className="admin-header-right">
-            <button className="admin-btn-outline" onClick={fetchAll} disabled={loading}>
-              {loading ? '⟳ Cargando...' : '⟳ Actualizar'}
-            </button>
-            <button className="admin-btn-csv" onClick={handleExport}>
-              📥 Exportar CSV
-            </button>
-            <button className="admin-btn-logout" onClick={handleLogout}>Salir →</button>
-          </div>
+          <button className="admin-btn-logout" onClick={handleLogout}>Salir →</button>
         </div>
+
+        {/* Tabs */}
+        <nav className="admin-tabs">
+          {TABS.map(t => (
+            <button key={t.id}
+              className={`admin-tab ${tab === t.id ? 'admin-tab--active' : ''}`}
+              onClick={() => setTab(t.id)}
+            >
+              <span>{t.icon}</span> {t.label}
+            </button>
+          ))}
+        </nav>
       </header>
 
+      {/* Contenido */}
       <div className="admin-content">
-        {/* Stats */}
-        {Object.keys(stats).length > 0 && <StatsRow stats={stats} />}
-
-        {/* Filters */}
-        <div className="admin-filters">
-          <input
-            type="text"
-            placeholder="🔍 Buscar por nombre..."
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1); }}
-            className="filter-search"
-          />
-          <select
-            value={filterRisk}
-            onChange={e => { setFilterRisk(e.target.value); setPage(1); }}
-            className="filter-select"
-          >
-            <option value="ALL">Todos los niveles</option>
-            {Object.entries(RISK_CONFIG).map(([k, v]) => (
-              <option key={k} value={k}>{v.dot} {v.label}</option>
-            ))}
-          </select>
-          <span className="filter-count">
-            {filtered.length} {filtered.length === 1 ? 'resultado' : 'resultados'}
-          </span>
-        </div>
-
-        {/* Table */}
-        <div className="admin-table-wrap">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th className="th-sortable" onClick={() => toggleSort('id')}># <SortIcon col="id" /></th>
-                <th className="th-sortable" onClick={() => toggleSort('nombre')}>Nombre <SortIcon col="nombre" /></th>
-                <th className="th-sortable" onClick={() => toggleSort('fecha')}>Fecha <SortIcon col="fecha" /></th>
-                <th className="th-sortable" onClick={() => toggleSort('total_score')}>Puntuación <SortIcon col="total_score" /></th>
-                <th className="th-sortable" onClick={() => toggleSort('risk_level')}>Nivel de riesgo <SortIcon col="risk_level" /></th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.length === 0 && (
-                <tr><td colSpan="6" className="td-empty">
-                  {loading ? 'Cargando evaluaciones...' : 'No se encontraron evaluaciones'}
-                </td></tr>
-              )}
-              {paginated.map(ev => {
-                const risk = RISK_CONFIG[ev.risk_level] || RISK_CONFIG.PRECAUCION;
-                const date = new Date(ev.fecha).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
-                const pct  = Math.round((ev.total_score / ev.max_score) * 100);
-                return (
-                  <tr key={ev.id} className="admin-row">
-                    <td className="td-id">{ev.id}</td>
-                    <td className="td-name">{ev.nombre}</td>
-                    <td className="td-date">{date}</td>
-                    <td className="td-score">
-                      <div className="score-pill">
-                        <span className="score-pill-num">{ev.total_score}<span className="score-pill-max">/80</span></span>
-                        <div className="score-mini-bar">
-                          <div className="score-mini-fill" style={{ width: `${pct}%`, background: risk.color }} />
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span className="risk-badge" style={{ background: risk.bg, color: risk.color, borderColor: risk.color }}>
-                        {risk.dot} {risk.label}
-                      </span>
-                    </td>
-                    <td className="td-actions">
-                      <button className="action-btn action-view" onClick={() => setSelectedId(ev.id)} title="Ver detalle">
-                        👁 Ver
-                      </button>
-                      <button className="action-btn action-delete" onClick={() => handleDelete(ev.id, ev.nombre)} title="Eliminar">
-                        🗑
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="admin-pagination">
-            <button className="page-btn" onClick={() => setPage(p => Math.max(1, p-1))} disabled={page === 1}>← Anterior</button>
-            <span className="page-info">Página {page} de {totalPages}</span>
-            <button className="page-btn" onClick={() => setPage(p => Math.min(totalPages, p+1))} disabled={page === totalPages}>Siguiente →</button>
-          </div>
-        )}
+        {tab === 'dashboard' && <Dashboard token={token} onNavigate={setTab} />}
+        {tab === 'drivesafe' && <TablaDriveSafe token={token} onLogout={handleLogout} />}
+        {tab === 'ec0217'    && <TablaEC token={token} tipo="ec0217" onLogout={handleLogout} />}
+        {tab === 'ec0301'    && <TablaEC token={token} tipo="ec0301" onLogout={handleLogout} />}
       </div>
-
-      {/* Detail Modal */}
-      {selectedId && (
-        <DetailModal evalId={selectedId} token={token} onClose={() => setSelectedId(null)} />
-      )}
     </div>
   );
 }
